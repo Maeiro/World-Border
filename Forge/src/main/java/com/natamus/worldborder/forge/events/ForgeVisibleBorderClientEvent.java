@@ -1,7 +1,6 @@
 package com.natamus.worldborder.forge.events;
 
 import com.mojang.blaze3d.platform.GlStateManager;
-import com.mojang.blaze3d.shaders.FogShape;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.BufferUploader;
@@ -16,7 +15,6 @@ import net.minecraft.Util;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
-import net.minecraft.client.renderer.FogRenderer;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
@@ -33,6 +31,16 @@ import net.minecraftforge.fml.common.Mod;
 @Mod.EventBusSubscriber(modid = Reference.MOD_ID, value = Dist.CLIENT, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class ForgeVisibleBorderClientEvent {
 	private static final ResourceLocation FORCEFIELD_LOCATION = new ResourceLocation("textures/misc/forcefield.png");
+	private static final int FOG_WALL_LAYER_COUNT = 14;
+	private static final float FOG_WALL_THICKNESS_BLOCKS = 36.0F;
+	private static final float FOG_WALL_OUTER_EXTENSION_BLOCKS = 8.0F;
+	private static final float FOG_WALL_MAX_ALPHA = 0.95F;
+	private static final float FOG_WALL_MIN_ALPHA = 0.14F;
+	private static final float FOG_WALL_BASE_OPACITY = 0.7F;
+
+	private static float fogColorRed = 0.75F;
+	private static float fogColorGreen = 0.80F;
+	private static float fogColorBlue = 0.85F;
 
 	@SubscribeEvent
 	public static void onRenderLevelStage(RenderLevelStageEvent event) {
@@ -48,7 +56,16 @@ public class ForgeVisibleBorderClientEvent {
 		}
 
 		BorderContext context = getActiveContext(minecraft, level, camera);
-		if (context == null || context.snapshot.isFogStyle()) {
+		if (context == null) {
+			return;
+		}
+
+		if (context.snapshot.isFogStyle()) {
+			if (!camera.getFluidInCamera().equals(FogType.NONE)) {
+				return;
+			}
+
+			renderFogWallBorder(minecraft, camera, context);
 			return;
 		}
 
@@ -56,45 +73,14 @@ public class ForgeVisibleBorderClientEvent {
 	}
 
 	@SubscribeEvent
-	public static void onRenderFog(ViewportEvent.RenderFog event) {
-		Camera camera = event.getCamera();
-		if (camera == null || !event.getType().equals(FogType.NONE)) {
+	public static void onComputeFogColor(ViewportEvent.ComputeFogColor event) {
+		if (event.getCamera() == null) {
 			return;
 		}
 
-		Minecraft minecraft = Minecraft.getInstance();
-		ClientLevel level = minecraft.level;
-		if (level == null) {
-			return;
-		}
-
-		BorderContext context = getActiveContext(minecraft, level, camera);
-		if (context == null || !context.snapshot.isFogStyle()) {
-			return;
-		}
-
-		double distanceToBorder = Math.max(0.0D, getDistanceToBorder(context.cameraX, context.cameraZ, context.minX, context.maxX, context.minZ, context.maxZ));
-		if (distanceToBorder > context.renderDistance) {
-			return;
-		}
-
-		float borderDistance = (float)distanceToBorder;
-		float near;
-		float far;
-		if (event.getMode().equals(FogRenderer.FogMode.FOG_SKY)) {
-			near = 0.0F;
-			far = borderDistance;
-		}
-		else {
-			float fogSpan = Mth.clamp(borderDistance / 10.0F, 4.0F, 64.0F);
-			near = borderDistance - fogSpan;
-			far = borderDistance;
-		}
-
-		event.setNearPlaneDistance(near);
-		event.setFarPlaneDistance(far);
-		event.setFogShape(FogShape.CYLINDER);
-		event.setCanceled(true);
+		fogColorRed = event.getRed();
+		fogColorGreen = event.getGreen();
+		fogColorBlue = event.getBlue();
 	}
 
 	@SubscribeEvent
@@ -238,6 +224,106 @@ public class ForgeVisibleBorderClientEvent {
 		RenderSystem.applyModelViewMatrix();
 		RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
 		RenderSystem.depthMask(true);
+	}
+
+	private static void renderFogWallBorder(Minecraft minecraft, Camera camera, BorderContext context) {
+		double minX = context.minX;
+		double maxX = context.maxX;
+		double minZ = context.minZ;
+		double maxZ = context.maxZ;
+		double cameraX = context.cameraX;
+		double cameraY = context.cameraY;
+		double cameraZ = context.cameraZ;
+		double renderDistance = context.renderDistance;
+
+		if (cameraX < maxX - renderDistance && cameraX > minX + renderDistance && cameraZ < maxZ - renderDistance && cameraZ > minZ + renderDistance) {
+			return;
+		}
+
+		double borderDistance = Math.max(0.0D, getDistanceToBorder(cameraX, cameraZ, minX, maxX, minZ, maxZ));
+		double proximity = Mth.clamp(1.0D - borderDistance / renderDistance, 0.0D, 1.0D);
+		float baseAlpha = Mth.clamp(FOG_WALL_BASE_OPACITY + (float)(proximity * 0.30D), 0.0F, 1.0F) * FOG_WALL_MAX_ALPHA;
+		if (baseAlpha <= 0.0F) {
+			return;
+		}
+
+		double minSegmentZ = Math.max((double)Mth.floor(cameraZ - renderDistance), minZ);
+		double maxSegmentZ = Math.min((double)Mth.ceil(cameraZ + renderDistance), maxZ);
+		double minSegmentX = Math.max((double)Mth.floor(cameraX - renderDistance), minX);
+		double maxSegmentX = Math.min((double)Mth.ceil(cameraX + renderDistance), maxX);
+		if (minSegmentZ >= maxSegmentZ && minSegmentX >= maxSegmentX) {
+			return;
+		}
+
+		double depthFar = (double)minecraft.gameRenderer.getDepthFar();
+		int red = Mth.clamp((int)(fogColorRed * 255.0F), 0, 255);
+		int green = Mth.clamp((int)(fogColorGreen * 255.0F), 0, 255);
+		int blue = Mth.clamp((int)(fogColorBlue * 255.0F), 0, 255);
+
+		BufferBuilder bufferbuilder = Tesselator.getInstance().getBuilder();
+
+		RenderSystem.enableBlend();
+		RenderSystem.enableDepthTest();
+		RenderSystem.blendFuncSeparate(
+			GlStateManager.SourceFactor.SRC_ALPHA,
+			GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA,
+			GlStateManager.SourceFactor.ONE,
+			GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA
+		);
+		RenderSystem.depthMask(false);
+		RenderSystem.setShader(GameRenderer::getPositionColorShader);
+		RenderSystem.disableCull();
+
+		bufferbuilder.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_COLOR);
+
+		float layerSpan = FOG_WALL_THICKNESS_BLOCKS + FOG_WALL_OUTER_EXTENSION_BLOCKS;
+		float layerSpacing = FOG_WALL_LAYER_COUNT <= 1 ? 0.0F : layerSpan / (float)(FOG_WALL_LAYER_COUNT - 1);
+		for (int layer = 0; layer < FOG_WALL_LAYER_COUNT; layer++) {
+			float layerProgress = FOG_WALL_LAYER_COUNT <= 1 ? 0.0F : (float)layer / (float)(FOG_WALL_LAYER_COUNT - 1);
+			float layerAlpha = baseAlpha * (float)Math.pow(1.0F - layerProgress, 0.65F);
+			if (layerAlpha < FOG_WALL_MIN_ALPHA) {
+				continue;
+			}
+
+			int alpha = Mth.clamp((int)(layerAlpha * 255.0F), 0, 255);
+			double offset = -FOG_WALL_OUTER_EXTENSION_BLOCKS + (double)layerSpacing * (double)layer;
+
+			if (cameraX > maxX - renderDistance && minSegmentZ < maxSegmentZ) {
+				addVerticalQuadAlongX(bufferbuilder, maxX - offset - cameraX, minSegmentZ - cameraZ, maxSegmentZ - cameraZ, depthFar, red, green, blue, alpha);
+			}
+
+			if (cameraX < minX + renderDistance && minSegmentZ < maxSegmentZ) {
+				addVerticalQuadAlongX(bufferbuilder, minX + offset - cameraX, minSegmentZ - cameraZ, maxSegmentZ - cameraZ, depthFar, red, green, blue, alpha);
+			}
+
+			if (cameraZ > maxZ - renderDistance && minSegmentX < maxSegmentX) {
+				addVerticalQuadAlongZ(bufferbuilder, minSegmentX - cameraX, maxSegmentX - cameraX, maxZ - offset - cameraZ, depthFar, red, green, blue, alpha);
+			}
+
+			if (cameraZ < minZ + renderDistance && minSegmentX < maxSegmentX) {
+				addVerticalQuadAlongZ(bufferbuilder, minSegmentX - cameraX, maxSegmentX - cameraX, minZ + offset - cameraZ, depthFar, red, green, blue, alpha);
+			}
+		}
+
+		BufferUploader.drawWithShader(bufferbuilder.end());
+		RenderSystem.enableCull();
+		RenderSystem.depthMask(true);
+		RenderSystem.disableBlend();
+		RenderSystem.defaultBlendFunc();
+	}
+
+	private static void addVerticalQuadAlongX(BufferBuilder bufferBuilder, double x, double minZ, double maxZ, double depthFar, int red, int green, int blue, int alpha) {
+		bufferBuilder.vertex(x, -depthFar, minZ).color(red, green, blue, alpha).endVertex();
+		bufferBuilder.vertex(x, -depthFar, maxZ).color(red, green, blue, alpha).endVertex();
+		bufferBuilder.vertex(x, depthFar, maxZ).color(red, green, blue, alpha).endVertex();
+		bufferBuilder.vertex(x, depthFar, minZ).color(red, green, blue, alpha).endVertex();
+	}
+
+	private static void addVerticalQuadAlongZ(BufferBuilder bufferBuilder, double minX, double maxX, double z, double depthFar, int red, int green, int blue, int alpha) {
+		bufferBuilder.vertex(minX, -depthFar, z).color(red, green, blue, alpha).endVertex();
+		bufferBuilder.vertex(maxX, -depthFar, z).color(red, green, blue, alpha).endVertex();
+		bufferBuilder.vertex(maxX, depthFar, z).color(red, green, blue, alpha).endVertex();
+		bufferBuilder.vertex(minX, depthFar, z).color(red, green, blue, alpha).endVertex();
 	}
 
 	private static double getDistanceToBorder(double x, double z, double minX, double maxX, double minZ, double maxZ) {
