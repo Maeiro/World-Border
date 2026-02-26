@@ -4,6 +4,7 @@ import com.natamus.collective.check.RegisterMod;
 import com.natamus.collective.check.ShouldLoadCheck;
 import com.natamus.worldborder.forge.config.IntegrateForgeConfig;
 import com.natamus.worldborder.forge.events.ForgeBorderEvent;
+import com.natamus.worldborder.forge.events.ForgeCommandEvent;
 import com.natamus.worldborder.forge.events.ForgeVisibleBorderSyncEvent;
 import com.natamus.worldborder.forge.network.ForgeNetwork;
 import com.natamus.worldborder.util.Reference;
@@ -36,6 +37,7 @@ public class ModForge {
 
 	private void loadComplete(final FMLLoadCompleteEvent event) {
     	MinecraftForge.EVENT_BUS.register(ForgeBorderEvent.class);
+		MinecraftForge.EVENT_BUS.register(ForgeCommandEvent.class);
 		MinecraftForge.EVENT_BUS.register(ForgeVisibleBorderSyncEvent.class);
 	}
 

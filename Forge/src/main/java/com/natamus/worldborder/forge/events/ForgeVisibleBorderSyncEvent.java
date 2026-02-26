@@ -12,6 +12,13 @@ public class ForgeVisibleBorderSyncEvent {
 	private static int tickCounter = 0;
 	private static VisibleBorderSnapshot lastBroadcastSnapshot = null;
 
+	public static void syncNowToAll() {
+		tickCounter = 0;
+		VisibleBorderSnapshot snapshot = VisibleBorderSnapshot.fromConfig();
+		lastBroadcastSnapshot = snapshot;
+		ForgeNetwork.sendToAll(new VisibleBorderSyncPacket(snapshot));
+	}
+
 	@SubscribeEvent
 	public static void onPlayerLoggedIn(PlayerEvent.PlayerLoggedInEvent event) {
 		if (!(event.getEntity() instanceof ServerPlayer)) {
