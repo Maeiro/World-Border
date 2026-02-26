@@ -1,6 +1,7 @@
 package com.natamus.worldborder.forge.events;
 
 import com.mojang.blaze3d.platform.GlStateManager;
+import com.mojang.blaze3d.shaders.FogShape;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.BufferUploader;
@@ -15,14 +16,17 @@ import net.minecraft.Util;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
+import net.minecraft.client.renderer.FogRenderer;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.level.border.BorderStatus;
+import net.minecraft.world.level.material.FogType;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.ClientPlayerNetworkEvent;
 import net.minecraftforge.client.event.RenderLevelStageEvent;
+import net.minecraftforge.client.event.ViewportEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
@@ -43,17 +47,54 @@ public class ForgeVisibleBorderClientEvent {
 			return;
 		}
 
-		VisibleBorderSnapshot snapshot = VisibleBorderClientState.getSnapshot();
-		if (snapshot == null || !snapshot.showVisibleBorder) {
+		BorderContext context = getActiveContext(minecraft, level, camera);
+		if (context == null || context.snapshot.isFogStyle()) {
 			return;
 		}
 
-		VisibleBorderSnapshot.DimensionBounds bounds = snapshot.getDimensionBounds(level.dimension().location().toString());
-		if (bounds == null || !bounds.enabled || !bounds.hasValidBounds()) {
+		renderForcefieldBorder(minecraft, camera, context);
+	}
+
+	@SubscribeEvent
+	public static void onRenderFog(ViewportEvent.RenderFog event) {
+		Camera camera = event.getCamera();
+		if (camera == null || !event.getType().equals(FogType.NONE)) {
 			return;
 		}
 
-		renderVisibleBorder(minecraft, camera, bounds);
+		Minecraft minecraft = Minecraft.getInstance();
+		ClientLevel level = minecraft.level;
+		if (level == null) {
+			return;
+		}
+
+		BorderContext context = getActiveContext(minecraft, level, camera);
+		if (context == null || !context.snapshot.isFogStyle()) {
+			return;
+		}
+
+		double distanceToBorder = Math.max(0.0D, getDistanceToBorder(context.cameraX, context.cameraZ, context.minX, context.maxX, context.minZ, context.maxZ));
+		if (distanceToBorder > context.renderDistance) {
+			return;
+		}
+
+		float borderDistance = (float)distanceToBorder;
+		float near;
+		float far;
+		if (event.getMode().equals(FogRenderer.FogMode.FOG_SKY)) {
+			near = 0.0F;
+			far = borderDistance;
+		}
+		else {
+			float fogSpan = Mth.clamp(borderDistance / 10.0F, 4.0F, 64.0F);
+			near = borderDistance - fogSpan;
+			far = borderDistance;
+		}
+
+		event.setNearPlaneDistance(near);
+		event.setFarPlaneDistance(far);
+		event.setFogShape(FogShape.CYLINDER);
+		event.setCanceled(true);
 	}
 
 	@SubscribeEvent
@@ -61,17 +102,31 @@ public class ForgeVisibleBorderClientEvent {
 		VisibleBorderClientState.clear();
 	}
 
-	private static void renderVisibleBorder(Minecraft minecraft, Camera camera, VisibleBorderSnapshot.DimensionBounds bounds) {
-		double minX = bounds.negativeX;
-		double maxX = bounds.positiveX;
-		double minZ = bounds.negativeZ;
-		double maxZ = bounds.positiveZ;
+	private static BorderContext getActiveContext(Minecraft minecraft, ClientLevel level, Camera camera) {
+		VisibleBorderSnapshot snapshot = VisibleBorderClientState.getSnapshot();
+		if (snapshot == null || !snapshot.showVisibleBorder) {
+			return null;
+		}
+
+		VisibleBorderSnapshot.DimensionBounds bounds = snapshot.getDimensionBounds(level.dimension().location().toString());
+		if (bounds == null || !bounds.enabled || !bounds.hasValidBounds()) {
+			return null;
+		}
 
 		double renderDistance = (double)(minecraft.options.getEffectiveRenderDistance() * 16);
 		Vec3 cameraPos = camera.getPosition();
-		double cameraX = cameraPos.x;
-		double cameraY = cameraPos.y;
-		double cameraZ = cameraPos.z;
+		return new BorderContext(snapshot, bounds, renderDistance, cameraPos.x, cameraPos.y, cameraPos.z);
+	}
+
+	private static void renderForcefieldBorder(Minecraft minecraft, Camera camera, BorderContext context) {
+		double minX = context.minX;
+		double maxX = context.maxX;
+		double minZ = context.minZ;
+		double maxZ = context.maxZ;
+		double cameraX = context.cameraX;
+		double cameraY = context.cameraY;
+		double cameraZ = context.cameraZ;
+		double renderDistance = context.renderDistance;
 
 		if (cameraX < maxX - renderDistance && cameraX > minX + renderDistance && cameraZ < maxZ - renderDistance && cameraZ > minZ + renderDistance) {
 			return;
@@ -193,5 +248,31 @@ public class ForgeVisibleBorderClientEvent {
 		double minDistance = Math.min(toMinX, toMaxX);
 		minDistance = Math.min(minDistance, toMinZ);
 		return Math.min(minDistance, toMaxZ);
+	}
+
+	private static class BorderContext {
+		public final VisibleBorderSnapshot snapshot;
+		public final VisibleBorderSnapshot.DimensionBounds bounds;
+		public final double renderDistance;
+		public final double cameraX;
+		public final double cameraY;
+		public final double cameraZ;
+		public final double minX;
+		public final double maxX;
+		public final double minZ;
+		public final double maxZ;
+
+		public BorderContext(VisibleBorderSnapshot snapshot, VisibleBorderSnapshot.DimensionBounds bounds, double renderDistance, double cameraX, double cameraY, double cameraZ) {
+			this.snapshot = snapshot;
+			this.bounds = bounds;
+			this.renderDistance = renderDistance;
+			this.cameraX = cameraX;
+			this.cameraY = cameraY;
+			this.cameraZ = cameraZ;
+			this.minX = bounds.negativeX;
+			this.maxX = bounds.positiveX;
+			this.minZ = bounds.negativeZ;
+			this.maxZ = bounds.positiveZ;
+		}
 	}
 }

@@ -14,6 +14,7 @@ public class ConfigHandler extends DuskConfig {
 	@Entry public static boolean enableCustomNetherBorder = false;
 	@Entry public static boolean enableCustomEndBorder = true;
 	@Entry public static boolean showVisibleBorder = false;
+	@Entry public static String visibleBorderStyle = "forcefield";
 	@Entry public static boolean shouldLoopToOppositeBorder = true;
 	@Entry(min = 0, max = 1000) public static int distanceTeleportedBack = 10;
 	@Entry public static String nearBorderMessage = "You're getting close to the world border!";
@@ -44,6 +45,9 @@ public class ConfigHandler extends DuskConfig {
 		));
 		configMetaData.put("showVisibleBorder", Arrays.asList(
 			"When enabled, shows a visual world border similar to vanilla. This is only visual and does not block movement."
+		));
+		configMetaData.put("visibleBorderStyle", Arrays.asList(
+			"The visual style of the visible border. Accepted values: 'forcefield' and 'fog'."
 		));
 		configMetaData.put("shouldLoopToOppositeBorder", Arrays.asList(
 			"When enabled, instead of teleporting the player inside near where they were, teleports them from the positive to the negative x/z coord and vice versa."
@@ -98,5 +102,7 @@ public class ConfigHandler extends DuskConfig {
 		));
 
 		DuskConfig.init(Reference.NAME, Reference.MOD_ID, ConfigHandler.class);
+		// Ensure newly added config entries are written to existing config files.
+		DuskConfig.write(Reference.MOD_ID);
 	}
 }

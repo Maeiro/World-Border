@@ -5,13 +5,18 @@ import com.natamus.worldborder.config.ConfigHandler;
 import java.util.Objects;
 
 public class VisibleBorderSnapshot {
+	public static final String STYLE_FORCEFIELD = "forcefield";
+	public static final String STYLE_FOG = "fog";
+
 	public final boolean showVisibleBorder;
+	public final String visibleBorderStyle;
 	public final DimensionBounds overworld;
 	public final DimensionBounds nether;
 	public final DimensionBounds end;
 
-	public VisibleBorderSnapshot(boolean showVisibleBorder, DimensionBounds overworld, DimensionBounds nether, DimensionBounds end) {
+	public VisibleBorderSnapshot(boolean showVisibleBorder, String visibleBorderStyle, DimensionBounds overworld, DimensionBounds nether, DimensionBounds end) {
 		this.showVisibleBorder = showVisibleBorder;
+		this.visibleBorderStyle = normalizeStyle(visibleBorderStyle);
 		this.overworld = overworld;
 		this.nether = nether;
 		this.end = end;
@@ -20,6 +25,7 @@ public class VisibleBorderSnapshot {
 	public static VisibleBorderSnapshot fromConfig() {
 		return new VisibleBorderSnapshot(
 			ConfigHandler.showVisibleBorder,
+			ConfigHandler.visibleBorderStyle,
 			new DimensionBounds(
 				ConfigHandler.enableCustomOverworldBorder,
 				ConfigHandler.overworldBorderPositiveX,
@@ -42,6 +48,18 @@ public class VisibleBorderSnapshot {
 				ConfigHandler.endBorderNegativeZ
 			)
 		);
+	}
+
+	public boolean isFogStyle() {
+		return STYLE_FOG.equals(visibleBorderStyle);
+	}
+
+	public static String normalizeStyle(String style) {
+		if (style != null && STYLE_FOG.equalsIgnoreCase(style.trim())) {
+			return STYLE_FOG;
+		}
+
+		return STYLE_FORCEFIELD;
 	}
 
 	public DimensionBounds getDimensionBounds(String dimensionName) {
@@ -69,6 +87,7 @@ public class VisibleBorderSnapshot {
 
 		VisibleBorderSnapshot other = (VisibleBorderSnapshot)obj;
 		return showVisibleBorder == other.showVisibleBorder
+			&& Objects.equals(visibleBorderStyle, other.visibleBorderStyle)
 			&& Objects.equals(overworld, other.overworld)
 			&& Objects.equals(nether, other.nether)
 			&& Objects.equals(end, other.end);
@@ -76,7 +95,7 @@ public class VisibleBorderSnapshot {
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(showVisibleBorder, overworld, nether, end);
+		return Objects.hash(showVisibleBorder, visibleBorderStyle, overworld, nether, end);
 	}
 
 	public static class DimensionBounds {

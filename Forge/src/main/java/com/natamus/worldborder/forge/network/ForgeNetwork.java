@@ -10,7 +10,7 @@ import net.minecraftforge.network.PacketDistributor;
 import net.minecraftforge.network.simple.SimpleChannel;
 
 public class ForgeNetwork {
-	private static final String PROTOCOL_VERSION = "1";
+	private static final String PROTOCOL_VERSION = "2";
 	private static boolean initialized = false;
 
 	private static final SimpleChannel CHANNEL = NetworkRegistry.newSimpleChannel(

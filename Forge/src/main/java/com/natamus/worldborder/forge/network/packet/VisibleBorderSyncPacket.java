@@ -16,6 +16,7 @@ public class VisibleBorderSyncPacket {
 
 	public static void encode(VisibleBorderSyncPacket packet, FriendlyByteBuf buffer) {
 		buffer.writeBoolean(packet.snapshot.showVisibleBorder);
+		buffer.writeUtf(packet.snapshot.visibleBorderStyle, 16);
 		writeBounds(buffer, packet.snapshot.overworld);
 		writeBounds(buffer, packet.snapshot.nether);
 		writeBounds(buffer, packet.snapshot.end);
@@ -23,11 +24,12 @@ public class VisibleBorderSyncPacket {
 
 	public static VisibleBorderSyncPacket decode(FriendlyByteBuf buffer) {
 		boolean showVisibleBorder = buffer.readBoolean();
+		String visibleBorderStyle = buffer.readUtf(16);
 		VisibleBorderSnapshot.DimensionBounds overworld = readBounds(buffer);
 		VisibleBorderSnapshot.DimensionBounds nether = readBounds(buffer);
 		VisibleBorderSnapshot.DimensionBounds end = readBounds(buffer);
 
-		return new VisibleBorderSyncPacket(new VisibleBorderSnapshot(showVisibleBorder, overworld, nether, end));
+		return new VisibleBorderSyncPacket(new VisibleBorderSnapshot(showVisibleBorder, visibleBorderStyle, overworld, nether, end));
 	}
 
 	public static void handle(VisibleBorderSyncPacket packet, Supplier<NetworkEvent.Context> contextSupplier) {
