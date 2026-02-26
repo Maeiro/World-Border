@@ -14,6 +14,8 @@ import java.util.HashMap;
 
 public class BorderEvent {
 	private static final HashMap<String, BlockPos> lastplayerpos = new HashMap<String, BlockPos>();
+	private static final HashMap<String, Long> lastNearBorderMessageMs = new HashMap<String, Long>();
+	private static final long NEAR_BORDER_MESSAGE_COOLDOWN_MS = 60_000L;
 	
 	public static void onPlayerTick(ServerLevel world, ServerPlayer player) {
 		if (player.tickCount % 20 != 0) {
@@ -183,8 +185,15 @@ public class BorderEvent {
 				if (lastpos.equals(ppos)) {
 					return;
 				}
+
+				long now = System.currentTimeMillis();
+				long lastMessageAt = lastNearBorderMessageMs.getOrDefault(playername, 0L);
+				if (now - lastMessageAt < NEAR_BORDER_MESSAGE_COOLDOWN_MS) {
+					return;
+				}
 				
 				MessageFunctions.sendMessage(player, ConfigHandler.nearBorderMessage, ChatFormatting.YELLOW);
+				lastNearBorderMessageMs.put(playername, now);
 			}
 		}
 	}
