@@ -13,6 +13,7 @@ public class ConfigHandler extends DuskConfig {
 	@Entry public static boolean enableCustomOverworldBorder = true;
 	@Entry public static boolean enableCustomNetherBorder = false;
 	@Entry public static boolean enableCustomEndBorder = true;
+	@Entry public static boolean showVisibleBorder = false;
 	@Entry public static boolean shouldLoopToOppositeBorder = true;
 	@Entry(min = 0, max = 1000) public static int distanceTeleportedBack = 10;
 	@Entry public static String nearBorderMessage = "You're getting close to the world border!";
@@ -40,6 +41,9 @@ public class ConfigHandler extends DuskConfig {
 		));
 		configMetaData.put("enableCustomEndBorder", Arrays.asList(
 			"When enabled, uses the endBorderCoords to set the border."
+		));
+		configMetaData.put("showVisibleBorder", Arrays.asList(
+			"When enabled, shows a visual world border similar to vanilla. This is only visual and does not block movement."
 		));
 		configMetaData.put("shouldLoopToOppositeBorder", Arrays.asList(
 			"When enabled, instead of teleporting the player inside near where they were, teleports them from the positive to the negative x/z coord and vice versa."
