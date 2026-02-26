@@ -70,6 +70,7 @@ public class BorderEvent {
 		int x = ppos.getX();
 		int z = ppos.getZ();
 		int d = ConfigHandler.distanceTeleportedBack;
+		int nearBorderDistance = ConfigHandler.distanceFromBorderToWarn;
 		if (x <= negx) {
 			if (shouldloop) {
 				x = posx - d;
@@ -155,23 +156,23 @@ public class BorderEvent {
 		else {
 			boolean shouldmessage = false;
 			if (x < 0) {
-				if (negx - x < 0 && negx - x > -d) {
+				if (negx - x < 0 && negx - x > -nearBorderDistance) {
 					shouldmessage = true;
 				}
 			}
 			else {
-				if (posx - x > 0 && posx - x < d) {
+				if (posx - x > 0 && posx - x < nearBorderDistance) {
 					shouldmessage = true;
 				}
 			}
 			
 			if (z < 0) {
-				if (negz - z < 0 && negz - z > -d) {
+				if (negz - z < 0 && negz - z > -nearBorderDistance) {
 					shouldmessage = true;
 				}
 			}
 			else {
-				if (posz - z > 0 && posz - z < d) {
+				if (posz - z > 0 && posz - z < nearBorderDistance) {
 					shouldmessage = true;
 				}
 			}

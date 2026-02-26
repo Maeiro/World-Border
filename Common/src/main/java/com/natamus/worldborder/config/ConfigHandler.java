@@ -17,6 +17,7 @@ public class ConfigHandler extends DuskConfig {
 	@Entry public static String visibleBorderStyle = "forcefield";
 	@Entry public static boolean shouldLoopToOppositeBorder = true;
 	@Entry(min = 0, max = 1000) public static int distanceTeleportedBack = 10;
+	@Entry(min = 0, max = 1000) public static int distanceFromBorderToWarn = 10;
 	@Entry public static String nearBorderMessage = "You're getting close to the world border!";
 	@Entry public static String hitBorderMessage = "You've hit the world border, and were teleported inside!";
 	@Entry public static String loopBorderMessage = "You've hit the world border, and have looped around the world!";
@@ -55,8 +56,11 @@ public class ConfigHandler extends DuskConfig {
 		configMetaData.put("distanceTeleportedBack", Arrays.asList(
 			"The amount of blocks the player is teleported inside after hitting the border."
 		));
+		configMetaData.put("distanceFromBorderToWarn", Arrays.asList(
+			"The amount of blocks from the border where the nearBorderMessage is sent."
+		));
 		configMetaData.put("nearBorderMessage", Arrays.asList(
-			"The message which will be sent to the player when they are within 'distanceTeleportedBack' to the world border."
+			"The message which will be sent to the player when they are within 'distanceFromBorderToWarn' to the world border."
 		));
 		configMetaData.put("hitBorderMessage", Arrays.asList(
 			"The message which will be sent to the player when they hit the world border."
