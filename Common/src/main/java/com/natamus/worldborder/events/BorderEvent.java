@@ -3,6 +3,7 @@ package com.natamus.worldborder.events;
 import com.natamus.collective.functions.BlockPosFunctions;
 import com.natamus.collective.functions.MessageFunctions;
 import com.natamus.worldborder.config.ConfigHandler;
+import com.natamus.worldborder.util.AdvancementHelper;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
@@ -145,6 +146,7 @@ public class BorderEvent {
 			
 			if (shouldloop) {
 				MessageFunctions.sendMessage(player, ConfigHandler.loopBorderMessage, ChatFormatting.DARK_GREEN);
+				AdvancementHelper.grantLoopBorderAdvancement(player);
 			}
 			else {
 				MessageFunctions.sendMessage(player, ConfigHandler.hitBorderMessage, ChatFormatting.RED);
