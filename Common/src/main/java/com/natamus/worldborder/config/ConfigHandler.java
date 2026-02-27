@@ -16,6 +16,7 @@ public class ConfigHandler extends DuskConfig {
 	@Entry public static boolean showVisibleBorder = false;
 	@Entry public static String visibleBorderStyle = "forcefield";
 	@Entry public static boolean shouldLoopToOppositeBorder = true;
+	@Entry public static boolean keepPlayerInVehicleOnBorderTeleport = true;
 	@Entry(min = 0, max = 1000) public static int distanceTeleportedBack = 10;
 	@Entry(min = 0, max = 1000) public static int distanceFromBorderToWarn = 10;
 	@Entry public static String nearBorderMessage = "You're getting close to the world border!";
@@ -52,6 +53,9 @@ public class ConfigHandler extends DuskConfig {
 		));
 		configMetaData.put("shouldLoopToOppositeBorder", Arrays.asList(
 			"When enabled, instead of teleporting the player inside near where they were, teleports them from the positive to the negative x/z coord and vice versa."
+		));
+		configMetaData.put("keepPlayerInVehicleOnBorderTeleport", Arrays.asList(
+			"When enabled, players stay mounted on their vehicle (for example a boat) when teleported by the world border."
 		));
 		configMetaData.put("distanceTeleportedBack", Arrays.asList(
 			"The amount of blocks the player is teleported inside after hitting the border."

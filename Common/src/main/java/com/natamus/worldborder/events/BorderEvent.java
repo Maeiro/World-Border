@@ -137,13 +137,19 @@ public class BorderEvent {
 				newpos = newpos.above().immutable();
 			}
 			
-			Entity ride = player.getVehicle();
-			if (ride != null) {
-				ride.ejectPassengers();
-				ride.teleportTo(newpos.getX(), newpos.getY(), newpos.getZ());
+			if (ConfigHandler.keepPlayerInVehicleOnBorderTeleport && player.isPassenger()) {
+				Entity rootVehicle = player.getRootVehicle();
+				rootVehicle.teleportTo(newpos.getX(), newpos.getY(), newpos.getZ());
+
+				// Fallback for vehicles that do not keep passengers attached after teleport.
+				if (!player.isPassengerOfSameVehicle(rootVehicle)) {
+					player.teleportTo(newpos.getX(), newpos.getY(), newpos.getZ());
+					player.startRiding(rootVehicle, true);
+				}
 			}
-			
-			player.teleportTo(newpos.getX(), newpos.getY(), newpos.getZ());
+			else {
+				player.teleportTo(newpos.getX(), newpos.getY(), newpos.getZ());
+			}
 			
 			if (shouldloop) {
 				MessageFunctions.sendMessage(player, ConfigHandler.loopBorderMessage, ChatFormatting.DARK_GREEN);
