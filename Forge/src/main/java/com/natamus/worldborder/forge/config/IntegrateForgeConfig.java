@@ -1,6 +1,6 @@
 package com.natamus.worldborder.forge.config;
 
-import com.natamus.collective.config.DuskConfig;
+import com.natamus.collective_common_forge.config.DuskConfig;
 import com.natamus.worldborder.util.Reference;
 import net.minecraftforge.client.ConfigScreenHandler;
 import net.minecraftforge.fml.ModLoadingContext;

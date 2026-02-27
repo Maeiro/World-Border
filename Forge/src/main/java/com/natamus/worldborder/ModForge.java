@@ -1,7 +1,7 @@
 package com.natamus.worldborder;
 
-import com.natamus.collective.check.RegisterMod;
-import com.natamus.collective.check.ShouldLoadCheck;
+import com.natamus.collective_common_forge.check.RegisterMod;
+import com.natamus.collective_common_forge.check.ShouldLoadCheck;
 import com.natamus.worldborder.forge.config.IntegrateForgeConfig;
 import com.natamus.worldborder.forge.events.ForgeBorderEvent;
 import com.natamus.worldborder.forge.events.ForgeCommandEvent;

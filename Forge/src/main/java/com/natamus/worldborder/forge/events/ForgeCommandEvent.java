@@ -1,8 +1,8 @@
 package com.natamus.worldborder.forge.events;
 
 import com.mojang.brigadier.CommandDispatcher;
-import com.natamus.collective.config.DuskConfig;
-import com.natamus.collective.functions.DataFunctions;
+import com.natamus.collective_common_forge.config.DuskConfig;
+import com.natamus.collective_common_forge.functions.DataFunctions;
 import com.natamus.worldborder.util.Reference;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;

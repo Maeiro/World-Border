@@ -1,7 +1,7 @@
 package com.natamus.worldborder.events;
 
-import com.natamus.collective.functions.BlockPosFunctions;
-import com.natamus.collective.functions.MessageFunctions;
+import com.natamus.collective_common_forge.functions.BlockPosFunctions;
+import com.natamus.collective_common_forge.functions.MessageFunctions;
 import com.natamus.worldborder.config.ConfigHandler;
 import com.natamus.worldborder.util.AdvancementHelper;
 import net.minecraft.ChatFormatting;

@@ -80,8 +80,7 @@ dependencies {
 
     compileOnly project(":Common")
 
-    runtimeOnly fg.deobf("com.natamus.collective-ml:collective-forge:${minecraft_version}-${collective_version}")
-    compileOnly fg.deobf("com.natamus.collective-ml:collective-forge:${minecraft_version}-${collective_version}")
+    runtimeOnly fg.deobf("com.natamus.collective-ml:collective:${minecraft_version}-${collective_version}")
     compileOnly fg.deobf("com.natamus.collective-ml:collective:${minecraft_version}-${collective_version}")
 }
 
@@ -93,7 +92,7 @@ mixin { // mixin
     debug.export = true // mixin
 } // mixin
 
-tasks.withType(JavaCompile) {
+tasks.named('compileJava', JavaCompile).configure {
     source(project(":Common").sourceSets.main.allSource)
 }
 
